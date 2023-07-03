@@ -230,6 +230,99 @@ func (q *Queries) ListPostWithCommentAndTags(ctx context.Context) ([]ListPostWit
 	return items, nil
 }
 
+const listPostbyCategories = `-- name: ListPostbyCategories :many
+SELECT p.id, p.title, p.content, p.author_id, p.category_id, p.created_at, p.updated_at, json_agg(c.*) AS comments, json_agg(t.tags) AS tags
+FROM posts p 
+INNER JOIN categories cat on cat.id = $1
+LEFT JOIN comments c ON c.post_id = p.id
+LEFT JOIN post_tags pt ON pt.post_id = p.id
+LEFT JOIN tags t ON t.id = pt.tag_id
+
+GROUP BY p.id, p.title
+`
+
+type ListPostbyCategoriesRow struct {
+	ID         int32           `json:"id"`
+	Title      string          `json:"title"`
+	Content    string          `json:"content"`
+	AuthorID   int32           `json:"author_id"`
+	CategoryID int32           `json:"category_id"`
+	CreatedAt  time.Time       `json:"created_at"`
+	UpdatedAt  time.Time       `json:"updated_at"`
+	Comments   json.RawMessage `json:"comments"`
+	Tags       json.RawMessage `json:"tags"`
+}
+
+func (q *Queries) ListPostbyCategories(ctx context.Context, id int32) ([]ListPostbyCategoriesRow, error) {
+	rows, err := q.db.QueryContext(ctx, listPostbyCategories, id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListPostbyCategoriesRow{}
+	for rows.Next() {
+		var i ListPostbyCategoriesRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Title,
+			&i.Content,
+			&i.AuthorID,
+			&i.CategoryID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.Comments,
+			&i.Tags,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listPostbyTag = `-- name: ListPostbyTag :many
+SELECT p.id, p.title, p.content, p.author_id, p.category_id, p.created_at, p.updated_at FROM posts p
+JOIN post_tags pt ON pt.post_id = p.id
+WHERE pt.tag_id = $1
+`
+
+func (q *Queries) ListPostbyTag(ctx context.Context, tagID sql.NullInt32) ([]Post, error) {
+	rows, err := q.db.QueryContext(ctx, listPostbyTag, tagID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Post{}
+	for rows.Next() {
+		var i Post
+		if err := rows.Scan(
+			&i.ID,
+			&i.Title,
+			&i.Content,
+			&i.AuthorID,
+			&i.CategoryID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const updatePost = `-- name: UpdatePost :one
 UPDATE posts
 SET

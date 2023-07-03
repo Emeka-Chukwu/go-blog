@@ -52,3 +52,19 @@ LEFT JOIN post_tags pt ON pt.post_id = p.id
 LEFT JOIN tags t ON t.id = pt.tag_id
 GROUP BY p.id, p.title;
 
+
+-- name: ListPostbyCategories :many
+SELECT p.*, json_agg(c.*) AS comments, json_agg(t.tags) AS tags
+FROM posts p 
+INNER JOIN categories cat on cat.id = $1
+LEFT JOIN comments c ON c.post_id = p.id
+LEFT JOIN post_tags pt ON pt.post_id = p.id
+LEFT JOIN tags t ON t.id = pt.tag_id
+
+GROUP BY p.id, p.title;
+
+-- name: ListPostbyTag :many
+SELECT p.* FROM posts p
+JOIN post_tags pt ON pt.post_id = p.id
+WHERE pt.tag_id = $1;
+

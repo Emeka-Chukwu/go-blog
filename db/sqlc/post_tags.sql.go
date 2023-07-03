@@ -10,9 +10,33 @@ import (
 	"database/sql"
 )
 
+const createTagsToPost = `-- name: CreateTagsToPost :one
+INSERT INTO post_tags (
+ post_id, tag_id
+) VALUES (
+  $1, $2
+) RETURNING id, post_id, tag_id, created_at, updated_at
+`
+
+type CreateTagsToPostParams struct {
+	PostID sql.NullInt32 `json:"post_id"`
+	TagID  sql.NullInt32 `json:"tag_id"`
+}
+
+func (q *Queries) CreateTagsToPost(ctx context.Context, arg CreateTagsToPostParams) (PostTag, error) {
+	row := q.db.QueryRowContext(ctx, createTagsToPost, arg.PostID, arg.TagID)
+	var i PostTag
+	err := row.Scan(
+		&i.ID,
+		&i.PostID,
+		&i.TagID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const dissociatePostZFromTag = `-- name: DissociatePostZFromTag :exec
-
-
 DELETE FROM post_tags WHERE post_id = $1 AND tag_id=$2
 `
 
@@ -21,8 +45,6 @@ type DissociatePostZFromTagParams struct {
 	TagID  sql.NullInt32 `json:"tag_id"`
 }
 
-// -- name: AddTagsToPost
-// INSERT INTO post_tags ( post_id, tag_id ) VALUES %s;
 func (q *Queries) DissociatePostZFromTag(ctx context.Context, arg DissociatePostZFromTagParams) error {
 	_, err := q.db.ExecContext(ctx, dissociatePostZFromTag, arg.PostID, arg.TagID)
 	return err

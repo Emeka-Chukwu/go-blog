@@ -6,6 +6,7 @@ package db
 
 import (
 	"context"
+	"database/sql"
 )
 
 type Querier interface {
@@ -13,13 +14,12 @@ type Querier interface {
 	CreateComment(ctx context.Context, arg CreateCommentParams) (Comment, error)
 	CreatePost(ctx context.Context, arg CreatePostParams) (Post, error)
 	CreateTags(ctx context.Context, name string) (Tag, error)
+	CreateTagsToPost(ctx context.Context, arg CreateTagsToPostParams) (PostTag, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
 	DeleteCategory(ctx context.Context, id int32) error
 	DeleteComment(ctx context.Context, id int32) error
 	DeletePosts(ctx context.Context, id int32) error
 	DeleteTag(ctx context.Context, id int32) error
-	// -- name: AddTagsToPost
-	// INSERT INTO post_tags ( post_id, tag_id ) VALUES %s;
 	DissociatePostZFromTag(ctx context.Context, arg DissociatePostZFromTagParams) error
 	GetCategories(ctx context.Context) ([]Category, error)
 	GetCategoryById(ctx context.Context, id int32) (Category, error)
@@ -33,6 +33,8 @@ type Querier interface {
 	GetUsers(ctx context.Context) ([]User, error)
 	ListPostWithComment(ctx context.Context, arg ListPostWithCommentParams) ([]ListPostWithCommentRow, error)
 	ListPostWithCommentAndTags(ctx context.Context) ([]ListPostWithCommentAndTagsRow, error)
+	ListPostbyCategories(ctx context.Context, id int32) ([]ListPostbyCategoriesRow, error)
+	ListPostbyTag(ctx context.Context, tagID sql.NullInt32) ([]Post, error)
 	UpdateCategory(ctx context.Context, arg UpdateCategoryParams) (Category, error)
 	UpdateComment(ctx context.Context, arg UpdateCommentParams) (Comment, error)
 	UpdatePost(ctx context.Context, arg UpdatePostParams) (Post, error)
