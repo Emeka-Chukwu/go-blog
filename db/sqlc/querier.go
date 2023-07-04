@@ -13,7 +13,7 @@ type Querier interface {
 	CreateCategory(ctx context.Context, arg CreateCategoryParams) (Category, error)
 	CreateComment(ctx context.Context, arg CreateCommentParams) (Comment, error)
 	CreatePost(ctx context.Context, arg CreatePostParams) (Post, error)
-	CreateTags(ctx context.Context, name string) (Tag, error)
+	CreateTags(ctx context.Context, arg CreateTagsParams) (Tag, error)
 	CreateTagsToPost(ctx context.Context, arg CreateTagsToPostParams) (PostTag, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
 	DeleteCategory(ctx context.Context, id int32) error

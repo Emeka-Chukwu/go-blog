@@ -19,9 +19,10 @@ RETURNING *;
 
 -- name: CreateTags :one
 INSERT INTO tags (
+    id,
   name
 ) VALUES (
-  $1
+  $1, $2
 ) RETURNING *;
 
 
