@@ -20,6 +20,7 @@ type Querier interface {
 	DeleteComment(ctx context.Context, id int32) error
 	DeletePosts(ctx context.Context, id int32) error
 	DeleteTag(ctx context.Context, id int32) error
+	DeleteTagsOfPost(ctx context.Context, postID sql.NullInt32) error
 	DissociatePostZFromTag(ctx context.Context, arg DissociatePostZFromTagParams) error
 	GetCategories(ctx context.Context) ([]Category, error)
 	GetCategoryById(ctx context.Context, id int32) (Category, error)
@@ -32,14 +33,14 @@ type Querier interface {
 	GetUserByEmail(ctx context.Context, email sql.NullString) (User, error)
 	GetUserById(ctx context.Context, id int32) (User, error)
 	GetUsers(ctx context.Context) ([]User, error)
-	ListPostWithComment(ctx context.Context, arg ListPostWithCommentParams) ([]ListPostWithCommentRow, error)
 	ListPostWithCommentAndTags(ctx context.Context) ([]ListPostWithCommentAndTagsRow, error)
-	ListPostbyCategories(ctx context.Context, id int32) ([]ListPostbyCategoriesRow, error)
-	ListPostbyTag(ctx context.Context, tagID sql.NullInt32) ([]Post, error)
+	ListPostbyCategories(ctx context.Context, categoryID int32) ([]ListPostbyCategoriesRow, error)
+	ListPostbyTag(ctx context.Context, tagID sql.NullInt32) ([]ListPostbyTagRow, error)
 	UpdateCategory(ctx context.Context, arg UpdateCategoryParams) (Category, error)
 	UpdateComment(ctx context.Context, arg UpdateCommentParams) (Comment, error)
 	UpdatePost(ctx context.Context, arg UpdatePostParams) (Post, error)
 	UpdateTag(ctx context.Context, arg UpdateTagParams) (Tag, error)
+	UpdateTagsPost(ctx context.Context, arg UpdateTagsPostParams) (PostTag, error)
 	UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error)
 }
 

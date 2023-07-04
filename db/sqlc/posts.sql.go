@@ -14,16 +14,18 @@ import (
 
 const createPost = `-- name: CreatePost :one
 INSERT INTO posts (
+    id,
   title,
   content,
   author_id,
   category_id
 ) VALUES (
-  $1, $2, $3, $4 
+  $1, $2, $3, $4 , $5
 ) RETURNING id, title, content, author_id, category_id, created_at, updated_at
 `
 
 type CreatePostParams struct {
+	ID         int32  `json:"id"`
 	Title      string `json:"title"`
 	Content    string `json:"content"`
 	AuthorID   int32  `json:"author_id"`
@@ -32,6 +34,7 @@ type CreatePostParams struct {
 
 func (q *Queries) CreatePost(ctx context.Context, arg CreatePostParams) (Post, error) {
 	row := q.db.QueryRowContext(ctx, createPost,
+		arg.ID,
 		arg.Title,
 		arg.Content,
 		arg.AuthorID,
@@ -120,64 +123,8 @@ func (q *Queries) GetPosts(ctx context.Context, arg GetPostsParams) ([]Post, err
 	return items, nil
 }
 
-const listPostWithComment = `-- name: ListPostWithComment :many
-SELECT p.id, p.title, p.content, p.author_id, p.category_id, p.created_at, p.updated_at, json_agg(c.*) AS comments
-FROM posts p
-LEFT JOIN comments c ON c.post_id = p.id
-GROUP BY p.id LIMIT $1
-OFFSET $2
-`
-
-type ListPostWithCommentParams struct {
-	Limit  int32 `json:"limit"`
-	Offset int32 `json:"offset"`
-}
-
-type ListPostWithCommentRow struct {
-	ID         int32           `json:"id"`
-	Title      string          `json:"title"`
-	Content    string          `json:"content"`
-	AuthorID   int32           `json:"author_id"`
-	CategoryID int32           `json:"category_id"`
-	CreatedAt  time.Time       `json:"created_at"`
-	UpdatedAt  time.Time       `json:"updated_at"`
-	Comments   json.RawMessage `json:"comments"`
-}
-
-func (q *Queries) ListPostWithComment(ctx context.Context, arg ListPostWithCommentParams) ([]ListPostWithCommentRow, error) {
-	rows, err := q.db.QueryContext(ctx, listPostWithComment, arg.Limit, arg.Offset)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []ListPostWithCommentRow{}
-	for rows.Next() {
-		var i ListPostWithCommentRow
-		if err := rows.Scan(
-			&i.ID,
-			&i.Title,
-			&i.Content,
-			&i.AuthorID,
-			&i.CategoryID,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-			&i.Comments,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const listPostWithCommentAndTags = `-- name: ListPostWithCommentAndTags :many
-SELECT p.id, p.title, p.content, p.author_id, p.category_id, p.created_at, p.updated_at, json_agg(c.*) AS comments, json_agg(t.tags) AS tags
+SELECT p.id, p.title, p.content, p.author_id, p.category_id, p.created_at, p.updated_at, json_agg(c.*) AS comments, json_agg(t.*) AS tags
 FROM posts p
 LEFT JOIN comments c ON c.post_id = p.id
 LEFT JOIN post_tags pt ON pt.post_id = p.id
@@ -231,13 +178,12 @@ func (q *Queries) ListPostWithCommentAndTags(ctx context.Context) ([]ListPostWit
 }
 
 const listPostbyCategories = `-- name: ListPostbyCategories :many
-SELECT p.id, p.title, p.content, p.author_id, p.category_id, p.created_at, p.updated_at, json_agg(c.*) AS comments, json_agg(t.tags) AS tags
+SELECT p.id, p.title, p.content, p.author_id, p.category_id, p.created_at, p.updated_at, json_agg(c.*) AS comments, json_agg(t.*) AS tags
 FROM posts p 
-INNER JOIN categories cat on cat.id = $1
 LEFT JOIN comments c ON c.post_id = p.id
 LEFT JOIN post_tags pt ON pt.post_id = p.id
 LEFT JOIN tags t ON t.id = pt.tag_id
-
+Where p.category_id =  $1
 GROUP BY p.id, p.title
 `
 
@@ -253,8 +199,8 @@ type ListPostbyCategoriesRow struct {
 	Tags       json.RawMessage `json:"tags"`
 }
 
-func (q *Queries) ListPostbyCategories(ctx context.Context, id int32) ([]ListPostbyCategoriesRow, error) {
-	rows, err := q.db.QueryContext(ctx, listPostbyCategories, id)
+func (q *Queries) ListPostbyCategories(ctx context.Context, categoryID int32) ([]ListPostbyCategoriesRow, error) {
+	rows, err := q.db.QueryContext(ctx, listPostbyCategories, categoryID)
 	if err != nil {
 		return nil, err
 	}
@@ -287,20 +233,33 @@ func (q *Queries) ListPostbyCategories(ctx context.Context, id int32) ([]ListPos
 }
 
 const listPostbyTag = `-- name: ListPostbyTag :many
-SELECT p.id, p.title, p.content, p.author_id, p.category_id, p.created_at, p.updated_at FROM posts p
+SELECT p.id, p.title, p.content, p.author_id, p.category_id, p.created_at, p.updated_at,json_agg(c.*) AS comments FROM posts p
 JOIN post_tags pt ON pt.post_id = p.id
+LEFT JOIN comments c ON c.post_id = p.id
 WHERE pt.tag_id = $1
+Group by p.id
 `
 
-func (q *Queries) ListPostbyTag(ctx context.Context, tagID sql.NullInt32) ([]Post, error) {
+type ListPostbyTagRow struct {
+	ID         int32           `json:"id"`
+	Title      string          `json:"title"`
+	Content    string          `json:"content"`
+	AuthorID   int32           `json:"author_id"`
+	CategoryID int32           `json:"category_id"`
+	CreatedAt  time.Time       `json:"created_at"`
+	UpdatedAt  time.Time       `json:"updated_at"`
+	Comments   json.RawMessage `json:"comments"`
+}
+
+func (q *Queries) ListPostbyTag(ctx context.Context, tagID sql.NullInt32) ([]ListPostbyTagRow, error) {
 	rows, err := q.db.QueryContext(ctx, listPostbyTag, tagID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []Post{}
+	items := []ListPostbyTagRow{}
 	for rows.Next() {
-		var i Post
+		var i ListPostbyTagRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.Title,
@@ -309,6 +268,7 @@ func (q *Queries) ListPostbyTag(ctx context.Context, tagID sql.NullInt32) ([]Pos
 			&i.CategoryID,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.Comments,
 		); err != nil {
 			return nil, err
 		}
