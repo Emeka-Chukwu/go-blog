@@ -11,14 +11,20 @@ import (
 
 const createTags = `-- name: CreateTags :one
 INSERT INTO tags (
+    id,
   name
 ) VALUES (
-  $1
+  $1, $2
 ) RETURNING id, name, created_at, updated_at
 `
 
-func (q *Queries) CreateTags(ctx context.Context, name string) (Tag, error) {
-	row := q.db.QueryRowContext(ctx, createTags, name)
+type CreateTagsParams struct {
+	ID   int32  `json:"id"`
+	Name string `json:"name"`
+}
+
+func (q *Queries) CreateTags(ctx context.Context, arg CreateTagsParams) (Tag, error) {
+	row := q.db.QueryRowContext(ctx, createTags, arg.ID, arg.Name)
 	var i Tag
 	err := row.Scan(
 		&i.ID,

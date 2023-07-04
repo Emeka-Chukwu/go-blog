@@ -4,7 +4,6 @@ import (
 	"blog-api/util"
 	"context"
 	"database/sql"
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -34,7 +33,6 @@ func createRandomUser(t *testing.T) User {
 	}
 
 	user, err := testQueries.CreateUser(context.Background(), arg)
-	fmt.Println(err)
 	require.NoError(t, err)
 	require.NotEmpty(t, user)
 	require.Equal(t, arg.Username.String, user.Username.String)

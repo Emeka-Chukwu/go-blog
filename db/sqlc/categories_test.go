@@ -4,7 +4,6 @@ import (
 	"blog-api/util"
 	"context"
 	"database/sql"
-	"fmt"
 	"testing"
 	"time"
 
@@ -17,7 +16,6 @@ func createRandomCategory(t *testing.T) Category {
 		ID:   int32(util.RandomInt(1, 1000000000)),
 	}
 	category, err := testQueries.CreateCategory(context.Background(), arg)
-	fmt.Println(err)
 	require.NoError(t, err)
 	require.NotEmpty(t, category)
 	require.Equal(t, arg.Name, category.Name)
@@ -58,7 +56,7 @@ func TestUpdateCategory(t *testing.T) {
 
 }
 
-func TestDeleteAccount(t *testing.T) {
+func TestDeleteCategory(t *testing.T) {
 	category1 := createRandomCategory(t)
 	err := testQueries.DeleteCategory(context.Background(), category1.ID)
 	require.NoError(t, err)
