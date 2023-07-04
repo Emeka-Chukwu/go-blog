@@ -29,6 +29,7 @@ type Querier interface {
 	GetPosts(ctx context.Context, arg GetPostsParams) ([]Post, error)
 	GetTagId(ctx context.Context, id int32) (Tag, error)
 	GetTags(ctx context.Context) ([]Tag, error)
+	GetUserByEmail(ctx context.Context, email sql.NullString) (User, error)
 	GetUserById(ctx context.Context, id int32) (User, error)
 	GetUsers(ctx context.Context) ([]User, error)
 	ListPostWithComment(ctx context.Context, arg ListPostWithCommentParams) ([]ListPostWithCommentRow, error)
@@ -39,6 +40,7 @@ type Querier interface {
 	UpdateComment(ctx context.Context, arg UpdateCommentParams) (Comment, error)
 	UpdatePost(ctx context.Context, arg UpdatePostParams) (Post, error)
 	UpdateTag(ctx context.Context, arg UpdateTagParams) (Tag, error)
+	UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error)
 }
 
 var _ Querier = (*Queries)(nil)
