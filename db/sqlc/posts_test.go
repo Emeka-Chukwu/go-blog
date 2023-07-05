@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func createRandomPost(t *testing.T) (Post, Category, Tag) {
+func createRandomPost(t *testing.T) (Post, Category, Tag, PostTag) {
 	category := createRandomCategory(t)
 	user := createRandomUser(t)
 	tag := createRandomTag(t)
@@ -39,7 +39,7 @@ func createRandomPost(t *testing.T) (Post, Category, Tag) {
 	require.NotZero(t, category.CreatedAt)
 	require.Equal(t, postTagArg.PostID.Int32, post.ID)
 	require.Equal(t, postTagArg.TagID.Int32, tag.ID)
-	return post, category, tag
+	return post, category, tag, postTag
 }
 
 func TestCreatePost(t *testing.T) {
@@ -47,7 +47,7 @@ func TestCreatePost(t *testing.T) {
 }
 
 func TestGetPostById(t *testing.T) {
-	post1, _, _ := createRandomPost(t)
+	post1, _, _, _ := createRandomPost(t)
 	post2, err := testQueries.GetPostById(context.Background(), post1.ID)
 	require.NoError(t, err)
 	require.NotEmpty(t, post2)
@@ -56,9 +56,16 @@ func TestGetPostById(t *testing.T) {
 	require.NotZero(t, post2.ID)
 	require.WithinDuration(t, post1.CreatedAt, post2.CreatedAt, time.Second)
 }
+func TestGetPostByIdFailed(t *testing.T) {
+	post, err := testQueries.GetPostById(context.Background(), 0000)
+	require.Error(t, err)
+	require.Empty(t, post)
+	require.Zero(t, post.ID)
+
+}
 
 func TestUpdatePostContentonly(t *testing.T) {
-	oldPost, _, _ := createRandomPost(t)
+	oldPost, _, _, _ := createRandomPost(t)
 	newContent := util.RandomString(200)
 
 	updatedPost, err := testQueries.UpdatePost(context.Background(), UpdatePostParams{
@@ -76,7 +83,7 @@ func TestUpdatePostContentonly(t *testing.T) {
 }
 
 func TestUpdatePost(t *testing.T) {
-	oldPost, oldCategory, oldTag := createRandomPost(t)
+	oldPost, oldCategory, oldTag, postTag := createRandomPost(t)
 	newContent := util.RandomString(200)
 	newTitle := util.RandomString(20)
 	newCategory := createRandomCategory(t)
@@ -94,6 +101,7 @@ func TestUpdatePost(t *testing.T) {
 	updatedTag, err := testQueries.UpdateTagsPost(context.Background(), UpdateTagsPostParams{
 		PostID: sql.NullInt32{Valid: true, Int32: oldPost.ID},
 		TagID:  sql.NullInt32{Valid: true, Int32: newTag.ID},
+		ID:     postTag.ID,
 	})
 	require.NoError(t, err)
 	require.NotEmpty(t, updatedTag)
@@ -118,7 +126,7 @@ func TestUpdatePost(t *testing.T) {
 }
 
 func TestDeletePost(t *testing.T) {
-	post1, _, _ := createRandomPost(t)
+	post1, _, _, _ := createRandomPost(t)
 	err := testQueries.DeleteTagsOfPost(context.Background(), sql.NullInt32{Valid: true, Int32: post1.ID})
 	require.NoError(t, err)
 	err = testQueries.DeletePosts(context.Background(), post1.ID)
@@ -129,20 +137,25 @@ func TestDeletePost(t *testing.T) {
 	require.Empty(t, category2)
 }
 
-func TestListPosts(t *testing.T) {
-	for i := 0; i < 10; i++ {
-		createRandomPost(t)
-	}
-	posts, err := testQueries.GetPosts(context.TODO(), GetPostsParams{Limit: 10, Offset: 1})
+func TestDisociatePostFromTag(t *testing.T) {
+	post1, _, tag, postTag := createRandomPost(t)
+	err := testQueries.DissociatePostZFromTag(context.Background(), DissociatePostZFromTagParams{
+		PostID: sql.NullInt32{Valid: true, Int32: post1.ID},
+		TagID:  sql.NullInt32{Valid: true, Int32: tag.ID},
+	})
 	require.NoError(t, err)
-	require.NotEmpty(t, posts)
-	for _, post := range posts {
-		require.NotEmpty(t, post)
+	updatedTag, err := testQueries.UpdateTagsPost(context.Background(), UpdateTagsPostParams{
+		PostID: sql.NullInt32{Valid: true, Int32: post1.ID},
+		TagID:  sql.NullInt32{Valid: true, Int32: tag.ID},
+		ID:     postTag.ID,
+	})
 
-	}
+	require.Error(t, err)
+	require.EqualError(t, err, sql.ErrNoRows.Error())
+	require.Empty(t, updatedTag)
 }
 
-func TestListPost(t *testing.T) {
+func TestListPosts(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		createRandomPost(t)
 	}
@@ -174,7 +187,7 @@ func TestListPostsWithTagsAndComments(t *testing.T) {
 func TestListPostbyCategory(t *testing.T) {
 	var lastCategory Category
 	for i := 0; i < 10; i++ {
-		_, category, _ := createRandomPost(t)
+		_, category, _, _ := createRandomPost(t)
 		lastCategory = category
 	}
 	posts, err := testQueries.ListPostbyCategories(context.TODO(), lastCategory.ID)
@@ -190,7 +203,7 @@ func TestListPostbyCategory(t *testing.T) {
 func TestListPostbyTag(t *testing.T) {
 	var lastTag Tag
 	for i := 0; i < 10; i++ {
-		_, _, tag := createRandomPost(t)
+		_, _, tag, _ := createRandomPost(t)
 		lastTag = tag
 	}
 	posts, err := testQueries.ListPostbyTag(context.TODO(), sql.NullInt32{Valid: true, Int32: lastTag.ID})

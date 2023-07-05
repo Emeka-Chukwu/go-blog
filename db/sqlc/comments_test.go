@@ -11,7 +11,7 @@ import (
 )
 
 func createRandomComment(t *testing.T) Comment {
-	post, _, _ := createRandomPost(t)
+	post, _, _, _ := createRandomPost(t)
 	arg := CreateCommentParams{
 		PostID:  post.ID,
 		UserID:  post.AuthorID,
@@ -94,7 +94,7 @@ func TestDeleteComent(t *testing.T) {
 }
 
 func TestListComments(t *testing.T) {
-	post, _, _ := createRandomPost(t)
+	post, _, _, _ := createRandomPost(t)
 	for i := 0; i < 10; i++ {
 		createRandomComment2(t, post)
 	}
