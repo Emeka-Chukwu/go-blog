@@ -19,11 +19,12 @@ RETURNING *;
 
 -- name: CreateComment :one
 INSERT INTO comments (
+    id,
   post_id,
   user_id,
   content
 ) VALUES (
-  $1, $2, $3
+  $1, $2, $3, $4
 ) RETURNING *;
 
 

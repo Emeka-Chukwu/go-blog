@@ -12,22 +12,29 @@ import (
 
 const createComment = `-- name: CreateComment :one
 INSERT INTO comments (
+    id,
   post_id,
   user_id,
   content
 ) VALUES (
-  $1, $2, $3
+  $1, $2, $3, $4
 ) RETURNING id, post_id, user_id, content, created_at, updated_at
 `
 
 type CreateCommentParams struct {
+	ID      int32  `json:"id"`
 	PostID  int32  `json:"post_id"`
 	UserID  int32  `json:"user_id"`
 	Content string `json:"content"`
 }
 
 func (q *Queries) CreateComment(ctx context.Context, arg CreateCommentParams) (Comment, error) {
-	row := q.db.QueryRowContext(ctx, createComment, arg.PostID, arg.UserID, arg.Content)
+	row := q.db.QueryRowContext(ctx, createComment,
+		arg.ID,
+		arg.PostID,
+		arg.UserID,
+		arg.Content,
+	)
 	var i Comment
 	err := row.Scan(
 		&i.ID,
