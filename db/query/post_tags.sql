@@ -2,7 +2,24 @@
 
 
 
+-- name: UpdateTagsPost :one
+UPDATE post_tags 
+SET 
+    tag_id = COALESCE(sqlc.narg(tag_id),tag_id)
+WHERE 
+    post_id = sqlc.arg(post_id)
 
+RETURNING *;
+
+
+UPDATE posts
+SET
+ title = COALESCE(sqlc.narg(title), title),
+ content= COALESCE(sqlc.narg(content), content),
+ category_id= COALESCE(sqlc.narg(category_id), category_id)
+WHERE
+  id = sqlc.arg(id) AND author_id = $1
+RETURNING *;
 
 
 
@@ -17,3 +34,6 @@ INSERT INTO post_tags (
 
 -- name: DissociatePostZFromTag :exec
 DELETE FROM post_tags WHERE post_id = $1 AND tag_id=$2;
+
+-- name: DeleteTagsOfPost :exec
+DELETE FROM post_tags WHERE post_id = $1;
