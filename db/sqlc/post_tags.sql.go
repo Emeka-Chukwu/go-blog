@@ -62,20 +62,22 @@ func (q *Queries) DissociatePostZFromTag(ctx context.Context, arg DissociatePost
 const updateTagsPost = `-- name: UpdateTagsPost :one
 UPDATE post_tags 
 SET 
-    tag_id = COALESCE($1,tag_id)
+    tag_id = COALESCE($2,tag_id),
+    post_id = COALESCE($3,tag_id)
 WHERE 
-    post_id = $2
+    id = $1
 
 RETURNING id, post_id, tag_id, created_at, updated_at
 `
 
 type UpdateTagsPostParams struct {
+	ID     int32         `json:"id"`
 	TagID  sql.NullInt32 `json:"tag_id"`
 	PostID sql.NullInt32 `json:"post_id"`
 }
 
 func (q *Queries) UpdateTagsPost(ctx context.Context, arg UpdateTagsPostParams) (PostTag, error) {
-	row := q.db.QueryRowContext(ctx, updateTagsPost, arg.TagID, arg.PostID)
+	row := q.db.QueryRowContext(ctx, updateTagsPost, arg.ID, arg.TagID, arg.PostID)
 	var i PostTag
 	err := row.Scan(
 		&i.ID,

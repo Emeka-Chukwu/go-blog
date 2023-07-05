@@ -5,9 +5,10 @@
 -- name: UpdateTagsPost :one
 UPDATE post_tags 
 SET 
-    tag_id = COALESCE(sqlc.narg(tag_id),tag_id)
+    tag_id = COALESCE(sqlc.narg(tag_id),tag_id),
+    post_id = COALESCE(sqlc.narg(post_id),tag_id)
 WHERE 
-    post_id = sqlc.arg(post_id)
+    id = $1
 
 RETURNING *;
 
