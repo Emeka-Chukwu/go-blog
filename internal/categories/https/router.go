@@ -14,5 +14,4 @@ func NewCategoryHandlers(router *gin.RouterGroup, store db.Store, config util.Co
 	categoryHandler := usecase.NewCategoryUsecase(store, config)
 	route := router.Group("/category")
 	route.POST("/create", categoryHandler.CreateCategory)
-
 }

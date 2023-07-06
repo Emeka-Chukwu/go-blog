@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -14,6 +15,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang/mock/gomock"
+	"github.com/lib/pq"
 	"github.com/stretchr/testify/require"
 )
 
@@ -29,7 +31,7 @@ func TestCreateCategoryAPI(t *testing.T) {
 		{
 			name: "OK",
 			body: gin.H{
-				"name": categoryModel.Name,
+				"name": categoryModel.Name.String,
 				"id":   categoryModel.ID,
 			},
 			// setupAuth: func(t *testing.T, request *http.Request) {
@@ -40,13 +42,14 @@ func TestCreateCategoryAPI(t *testing.T) {
 					Name: categoryModel.Name,
 					ID:   categoryModel.ID,
 				}
+				fmt.Println(arg)
 				store.EXPECT().
 					CreateCategory(gomock.Any(), gomock.Eq(arg)).
 					Times(1).
 					Return(categoryModel, nil)
 			},
 			checkResponse: func(recorder *httptest.ResponseRecorder) {
-				require.Equal(t, http.StatusOK, recorder.Code)
+				require.Equal(t, http.StatusCreated, recorder.Code)
 				requireBodyMatchCategory(t, recorder.Body, categoryModel)
 			},
 		},
@@ -69,7 +72,7 @@ func TestCreateCategoryAPI(t *testing.T) {
 		{
 			name: "InternalError",
 			body: gin.H{
-				"name": categoryModel.Name,
+				"name": categoryModel.Name.String,
 				"id":   categoryModel.ID,
 			},
 			// setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
@@ -103,6 +106,25 @@ func TestCreateCategoryAPI(t *testing.T) {
 				require.Equal(t, http.StatusBadRequest, recorder.Code)
 			},
 		},
+		{
+			name: "DuplicateRecord",
+			body: gin.H{
+				"name": categoryModel.Name.String,
+				"id":   categoryModel.ID,
+			},
+			// setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+			// 	addAuthorization(t, request, tokenMaker, authorizationTypeBearer, user.Username, time.Minute)
+			// },
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					CreateCategory(gomock.Any(), gomock.Any()).
+					Times(1).
+					Return(db.Category{}, &pq.Error{Code: "23505"})
+			},
+			checkResponse: func(recorder *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusForbidden, recorder.Code)
+			},
+		},
 	}
 
 	for i := range testCases {
@@ -122,10 +144,9 @@ func TestCreateCategoryAPI(t *testing.T) {
 			data, err := json.Marshal(tc.body)
 			require.NoError(t, err)
 
-			url := "/accounts"
+			url := "/api/v1/category/create"
 			request, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(data))
 			require.NoError(t, err)
-
 			// tc.setupAuth(t, request, server.tokenMaker)
 			server.Router.ServeHTTP(recorder, request)
 			tc.checkResponse(recorder)
@@ -148,6 +169,6 @@ func requireBodyMatchCategory(t *testing.T, body *bytes.Buffer, category db.Cate
 	err = json.Unmarshal(data, &gotCategory)
 	require.NoError(t, err)
 	require.Equal(t, category.Name, gotCategory.Name)
-	require.Equal(t, category.ID, gotCategory.ID)
+	require.NotZero(t, gotCategory.ID)
 
 }

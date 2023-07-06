@@ -3,6 +3,7 @@ package app
 import (
 	db "blog-api/db/sqlc"
 	categoryhandler "blog-api/internal/categories/https"
+	serverpkg "blog-api/pkg/server"
 	"blog-api/util"
 	"net/http"
 
@@ -11,31 +12,19 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type Server struct {
-	Config util.Config
-	Store  db.Store
-	Router *gin.Engine
+func InitializeServer(config util.Config, store db.Store) (*serverpkg.Server, error) {
+	data, err := serverpkg.NewServer(config, store)
+	SetupRouter(data)
+	return data, err
 }
 
-//// server serves out http request for our backend service
-
-func NewServer(config util.Config, store db.Store) (*Server, error) {
-	server := &Server{Store: store, Config: config}
-	server.setupRouter()
-	return server, nil
-}
-
-func (server *Server) Start(address string) error {
-	return server.Router.Run(address)
-}
-
-func (server *Server) setupRouter() {
+func SetupRouter(server *serverpkg.Server) {
 	router := gin.Default()
 	server.Router = router
 
 	groupRouter := router.Group("/api/v1")
 	router.GET("/", func(ctx *gin.Context) {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"message": "app is unning fine at" + server.Config.HTTPServerAddress})
+		ctx.JSON(http.StatusOK, gin.H{"message": "app is unning fine at" + server.Config.HTTPServerAddress})
 	})
 	categoryhandler.NewCategoryHandlers(groupRouter, server.Store, server.Config)
 	// userHandler.NewUserHandlers(groupRouter, server.store, server.taskDistributor, server.tokenMaker, server.config)
