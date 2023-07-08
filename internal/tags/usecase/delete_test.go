@@ -1,4 +1,4 @@
-package category
+package tags
 
 import (
 	mockdb "blog-api/db/mock"
@@ -12,27 +12,27 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestDeleteCategoryAPI(t *testing.T) {
+func TestDeleteTagAPI(t *testing.T) {
 
-	category := randomCategory(t)
+	tag := randomTag(t)
 
 	testCases := []struct {
-		name       string
-		categoryID int32
+		name  string
+		tagID int32
 		// setupAuth     func(t *testing.T, request *http.Request, tokenMaker token.Maker)
 		buildStubs    func(store *mockdb.MockStore)
 		checkResponse func(t *testing.T, recorder *httptest.ResponseRecorder)
 	}{
 		{
-			name:       "Ok",
-			categoryID: category.ID,
+			name:  "Ok",
+			tagID: tag.ID,
 			// setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
 			// 	addAuthorization(t, request, tokenMaker, authorizationTypeBearer, user.Username, time.Minute)
 			// },
 
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
-					DeleteCategory(gomock.Any(), gomock.Eq(category.ID)).
+					DeleteTag(gomock.Any(), gomock.Eq(tag.ID)).
 					Times(1).
 					Return(nil)
 			},
@@ -59,11 +59,11 @@ func TestDeleteCategoryAPI(t *testing.T) {
 		// 	},
 		// },
 		{
-			name:       "NotFound",
-			categoryID: category.ID,
+			name:  "NotFound",
+			tagID: tag.ID,
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
-					DeleteCategory(gomock.Any(), gomock.Eq(category.ID)).
+					DeleteTag(gomock.Any(), gomock.Eq(tag.ID)).
 					Times(1).
 					Return(sql.ErrNoRows)
 			},
@@ -76,11 +76,11 @@ func TestDeleteCategoryAPI(t *testing.T) {
 			// },
 		},
 		{
-			name:       "InternalError",
-			categoryID: category.ID,
+			name:  "InternalError",
+			tagID: tag.ID,
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
-					DeleteCategory(gomock.Any(), gomock.Eq(category.ID)).
+					DeleteTag(gomock.Any(), gomock.Eq(tag.ID)).
 					Times(1).
 					Return(sql.ErrConnDone)
 			},
@@ -94,11 +94,11 @@ func TestDeleteCategoryAPI(t *testing.T) {
 		},
 
 		{
-			name:       "InvalidID",
-			categoryID: 0,
+			name:  "InvalidID",
+			tagID: 0,
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
-					DeleteCategory(gomock.Any(), gomock.Any()).
+					DeleteTag(gomock.Any(), gomock.Any()).
 					Times(0)
 
 			},
@@ -126,7 +126,7 @@ func TestDeleteCategoryAPI(t *testing.T) {
 			server := newTestServer(t, store)
 			recorder := httptest.NewRecorder()
 
-			url := fmt.Sprintf("/api/v1/category/%d", tc.categoryID)
+			url := fmt.Sprintf("/api/v1/tags/%d", tc.tagID)
 			request, err := http.NewRequest(http.MethodDelete, url, nil)
 			require.NoError(t, err)
 			// tc.setupAuth(t, request, server.tokenMaker)
