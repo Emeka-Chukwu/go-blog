@@ -14,7 +14,7 @@ type getFetchRequest struct {
 
 func (usecase *tagsusecase) Fetch(ctx *gin.Context) {
 	var req getFetchRequest
-	if err := ctx.ShouldBindUri(req); err != nil {
+	if err := ctx.ShouldBindUri(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, util.FormatErrorResponse(err.Error(), err))
 		return
 	}
@@ -24,7 +24,7 @@ func (usecase *tagsusecase) Fetch(ctx *gin.Context) {
 			ctx.JSON(http.StatusNotFound, util.FormatErrorResponse(err.Error(), err))
 			return
 		}
-		ctx.JSON(http.StatusFound, util.FormatErrorResponse(err.Error(), err))
+		ctx.JSON(http.StatusInternalServerError, util.FormatErrorResponse(err.Error(), err))
 		return
 	}
 	ctx.JSON(http.StatusOK, tag)

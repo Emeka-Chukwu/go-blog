@@ -3,6 +3,7 @@ package tags
 import (
 	db "blog-api/db/sqlc"
 	"blog-api/util"
+	"database/sql"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -12,16 +13,18 @@ import (
 func (usecase *tagsusecase) Update(ctx *gin.Context) {
 	var uriReq getFetchRequest
 	var req updateRequest
-	if err := ctx.ShouldBindJSON(req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, util.FormatErrorResponse(err.Error(), err.Error()))
 		return
 	}
-	if err := ctx.ShouldBindUri(uriReq); err != nil {
+	if err := ctx.ShouldBindUri(&uriReq); err != nil {
 		ctx.JSON(http.StatusBadRequest, util.FormatErrorResponse(err.Error(), err.Error()))
 		return
 	}
+
 	arg := db.UpdateTagParams{
 		Name: req.Name,
+		ID:   *req.ID,
 	}
 	tag, err := usecase.store.UpdateTag(ctx, arg)
 	if err != nil {
@@ -31,6 +34,9 @@ func (usecase *tagsusecase) Update(ctx *gin.Context) {
 				ctx.JSON(http.StatusForbidden, util.FormatErrorResponse(pqErr.Code.Name(), err.Error()))
 				return
 			}
+		} else if err == sql.ErrNoRows {
+			ctx.JSON(http.StatusNotFound, util.FormatErrorResponse(err.Error(), err))
+			return
 		}
 		ctx.JSON(http.StatusInternalServerError, util.FormatErrorResponse("Error occured", err.Error()))
 		return

@@ -10,7 +10,7 @@ import (
 
 func (usecase *tagsusecase) Delete(ctx *gin.Context) {
 	var req getFetchRequest
-	if err := ctx.ShouldBindUri(req); err != nil {
+	if err := ctx.ShouldBindUri(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, util.FormatErrorResponse(err.Error(), err.Error()))
 		return
 	}
@@ -20,7 +20,7 @@ func (usecase *tagsusecase) Delete(ctx *gin.Context) {
 			ctx.JSON(http.StatusNotFound, util.FormatErrorResponse(err.Error(), err.Error()))
 			return
 		}
-		ctx.JSON(http.StatusNotFound, util.FormatErrorResponse(err.Error(), err.Error()))
+		ctx.JSON(http.StatusInternalServerError, util.FormatErrorResponse(err.Error(), err.Error()))
 		return
 	}
 	ctx.JSON(http.StatusOK, nil)
