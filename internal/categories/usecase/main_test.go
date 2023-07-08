@@ -51,4 +51,9 @@ func NewCategoryHandlers(router *gin.RouterGroup, store db.Store, config util.Co
 	categoryHandler := NewCategoryUsecase(store, config)
 	route := router.Group("/category")
 	route.POST("/create", categoryHandler.CreateCategory)
+	route.GET("/:id", categoryHandler.FetchCategory)
+	route.PUT("/:id", categoryHandler.UpdateCategory)
+	route.DELETE("/:id", categoryHandler.DeleteCategory)
+	route.GET("/", categoryHandler.ListCategory)
+
 }
