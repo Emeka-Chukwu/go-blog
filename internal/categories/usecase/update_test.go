@@ -3,12 +3,10 @@ package category
 import (
 	mockdb "blog-api/db/mock"
 	db "blog-api/db/sqlc"
-	"blog-api/util"
 	"bytes"
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -19,11 +17,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestCreateCategoryAPI(t *testing.T) {
+func TestUpdateCategoryAPI(t *testing.T) {
 	categoryModel := randomCategory(t)
 	testCases := []struct {
-		name string
-		body gin.H
+		name       string
+		body       gin.H
+		categoryId int32
 		// setupAuth     func(t *testing.T, request *http.Request)
 		buildStubs    func(store *mockdb.MockStore)
 		checkResponse func(recoder *httptest.ResponseRecorder)
@@ -37,14 +36,14 @@ func TestCreateCategoryAPI(t *testing.T) {
 			// setupAuth: func(t *testing.T, request *http.Request) {
 			// 	addAuthorization(t, request, tokenMaker, authorizationTypeBearer, user.Username, time.Minute)
 			// },
+			categoryId: categoryModel.ID,
 			buildStubs: func(store *mockdb.MockStore) {
-				arg := db.CreateCategoryParams{
+				arg := db.UpdateCategoryParams{
 					Name: categoryModel.Name,
 					ID:   categoryModel.ID,
 				}
-				fmt.Println(arg)
 				store.EXPECT().
-					CreateCategory(gomock.Any(), gomock.Eq(arg)).
+					UpdateCategory(gomock.Any(), gomock.Eq(arg)).
 					Times(1).
 					Return(categoryModel, nil)
 			},
@@ -70,7 +69,8 @@ func TestCreateCategoryAPI(t *testing.T) {
 		// 	},
 		// },
 		{
-			name: "InternalError",
+			name:       "InternalError",
+			categoryId: categoryModel.ID,
 			body: gin.H{
 				"name": categoryModel.Name.String,
 				"id":   categoryModel.ID,
@@ -80,7 +80,7 @@ func TestCreateCategoryAPI(t *testing.T) {
 			// },
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
-					CreateCategory(gomock.Any(), gomock.Any()).
+					UpdateCategory(gomock.Any(), gomock.Any()).
 					Times(1).
 					Return(db.Category{}, sql.ErrConnDone)
 			},
@@ -89,7 +89,8 @@ func TestCreateCategoryAPI(t *testing.T) {
 			},
 		},
 		{
-			name: "InvalidData",
+			name:       "InvalidData",
+			categoryId: categoryModel.ID,
 			body: gin.H{
 				"name": categoryModel.Name,
 				"id":   categoryModel.ID,
@@ -99,7 +100,7 @@ func TestCreateCategoryAPI(t *testing.T) {
 			// },
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
-					CreateCategory(gomock.Any(), gomock.Any()).
+					UpdateCategory(gomock.Any(), gomock.Any()).
 					Times(0)
 			},
 			checkResponse: func(recorder *httptest.ResponseRecorder) {
@@ -107,7 +108,8 @@ func TestCreateCategoryAPI(t *testing.T) {
 			},
 		},
 		{
-			name: "DuplicateRecord",
+			name:       "DuplicateRecord",
+			categoryId: categoryModel.ID,
 			body: gin.H{
 				"name": categoryModel.Name.String,
 				"id":   categoryModel.ID,
@@ -117,12 +119,31 @@ func TestCreateCategoryAPI(t *testing.T) {
 			// },
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
-					CreateCategory(gomock.Any(), gomock.Any()).
+					UpdateCategory(gomock.Any(), gomock.Any()).
 					Times(1).
 					Return(db.Category{}, &pq.Error{Code: "23505"})
 			},
 			checkResponse: func(recorder *httptest.ResponseRecorder) {
 				require.Equal(t, http.StatusForbidden, recorder.Code)
+			},
+		},
+		{
+			name:       "Invalidparams",
+			categoryId: 0,
+			body: gin.H{
+				"name": categoryModel.Name.String,
+				"id":   categoryModel.ID,
+			},
+			// setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+			// 	addAuthorization(t, request, tokenMaker, authorizationTypeBearer, user.Username, time.Minute)
+			// },
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					UpdateCategory(gomock.Any(), gomock.Any()).
+					Times(0)
+			},
+			checkResponse: func(recorder *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusBadRequest, recorder.Code)
 			},
 		},
 	}
@@ -144,41 +165,13 @@ func TestCreateCategoryAPI(t *testing.T) {
 			data, err := json.Marshal(tc.body)
 			require.NoError(t, err)
 
-			url := "/api/v1/category/create"
-			request, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(data))
+			url := fmt.Sprintf("/api/v1/category/%d", tc.categoryId)
+			fmt.Println(url, "kkkkkk")
+			request, err := http.NewRequest(http.MethodPut, url, bytes.NewReader(data))
 			require.NoError(t, err)
 			// tc.setupAuth(t, request, server.tokenMaker)
 			server.Router.ServeHTTP(recorder, request)
 			tc.checkResponse(recorder)
 		})
 	}
-}
-
-func randomCategory(t *testing.T) (category db.Category) {
-	category = db.Category{
-		Name: sql.NullString{Valid: true, String: util.RandomString(12)},
-		ID:   int32(util.RandomInt(1, 1000000000)),
-	}
-	return
-}
-
-func requireBodyMatchCategory(t *testing.T, body *bytes.Buffer, category db.Category) {
-	data, err := ioutil.ReadAll(body)
-	require.NoError(t, err)
-	var gotCategory db.Category
-	err = json.Unmarshal(data, &gotCategory)
-	require.NoError(t, err)
-	require.Equal(t, category.Name, gotCategory.Name)
-	require.NotZero(t, gotCategory.ID)
-
-}
-
-func requireBodyMatchCategories(t *testing.T, body *bytes.Buffer, categories []db.Category) {
-	data, err := ioutil.ReadAll(body)
-	require.NoError(t, err)
-	var gotCategories []db.Category
-	err = json.Unmarshal(data, &gotCategories)
-	require.NoError(t, err)
-	require.Equal(t, categories, gotCategories)
-
 }

@@ -1,5 +1,17 @@
 package category
 
-import "github.com/gin-gonic/gin"
+import (
+	"blog-api/util"
+	"net/http"
 
-func (usecase *categoryusecase) ListCategory(ctx *gin.Context) {}
+	"github.com/gin-gonic/gin"
+)
+
+func (usecase *categoryusecase) ListCategory(ctx *gin.Context) {
+	data, err := usecase.Store.GetCategories(ctx)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, util.FormatErrorResponse(err.Error(), err.Error()))
+		return
+	}
+	ctx.JSON(http.StatusOK, data)
+}
