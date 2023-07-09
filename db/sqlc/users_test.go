@@ -14,30 +14,19 @@ func createRandomUser(t *testing.T) User {
 	hashedPassword, err := util.HashPassword(util.RandomPassword())
 	require.NoError(t, err)
 	arg := CreateUserParams{
-		Username: sql.NullString{
-			Valid:  true,
-			String: util.RandomUsername(),
-		},
-		Email: sql.NullString{
-			Valid:  true,
-			String: util.RandomEmail(),
-		},
-		Password: sql.NullString{
-			Valid:  true,
-			String: hashedPassword,
-		},
-		Role: sql.NullString{
-			Valid: true, String: "user",
-		},
-		ID: int32(util.RandomInt(1, 1000000000)),
+		Username: util.RandomUsername(),
+		Email:    util.RandomEmail(),
+		Password: hashedPassword,
+		Role:     "user",
+		ID:       int32(util.RandomInt(1, 1000000000)),
 	}
 
 	user, err := testQueries.CreateUser(context.Background(), arg)
 	require.NoError(t, err)
 	require.NotEmpty(t, user)
-	require.Equal(t, arg.Username.String, user.Username.String)
-	require.Equal(t, arg.Password.String, user.Password.String)
-	require.Equal(t, arg.Role.String, user.Role.String)
+	require.Equal(t, arg.Username, user.Username)
+	require.Equal(t, arg.Password, user.Password)
+	require.Equal(t, arg.Role, user.Role)
 	require.NotZero(t, arg.Email, user.Email)
 
 	require.NotZero(t, user.CreatedAt)
@@ -55,9 +44,9 @@ func TestGetUserById(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, user2)
 	require.Equal(t, user1.Username, user2.Username)
-	require.Equal(t, user1.Password.String, user2.Password.String)
+	require.Equal(t, user1.Password, user2.Password)
 	require.Equal(t, user1.Email, user2.Email)
-	require.Equal(t, user1.Role.String, user2.Role.String)
+	require.Equal(t, user1.Role, user2.Role)
 
 }
 
@@ -67,9 +56,9 @@ func TestGetUserByEmail(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, user2)
 	require.Equal(t, user1.Username, user2.Username)
-	require.Equal(t, user1.Password.String, user2.Password.String)
+	require.Equal(t, user1.Password, user2.Password)
 	require.Equal(t, user1.Email, user2.Email)
-	require.Equal(t, user1.Role.String, user2.Role.String)
+	require.Equal(t, user1.Role, user2.Role)
 
 }
 
@@ -82,11 +71,11 @@ func TestUpdateUserOnlyUsername(t *testing.T) {
 		ID:       oldUser.ID,
 	})
 	require.NoError(t, err)
-	require.NotEqual(t, oldUser.Username.String, updatedUser.Username.String)
-	require.Equal(t, oldUser.Email.String, updatedUser.Email.String)
-	require.Equal(t, updatedUser.Username.String, newUsername)
-	require.Equal(t, oldUser.Password.String, updatedUser.Password.String)
-	require.Equal(t, oldUser.Role.String, updatedUser.Role.String)
+	require.NotEqual(t, oldUser.Username, updatedUser.Username)
+	require.Equal(t, oldUser.Email, updatedUser.Email)
+	require.Equal(t, updatedUser.Username, newUsername)
+	require.Equal(t, oldUser.Password, updatedUser.Password)
+	require.Equal(t, oldUser.Role, updatedUser.Role)
 }
 
 func TestUpdateUserOnlyPassword(t *testing.T) {
@@ -103,10 +92,10 @@ func TestUpdateUserOnlyPassword(t *testing.T) {
 		ID: oldUser.ID,
 	})
 	require.NoError(t, err)
-	require.NotEqual(t, oldUser.Password.String, updatedUser.Password.String)
-	require.Equal(t, newHashedPassword, updatedUser.Password.String)
+	require.NotEqual(t, oldUser.Password, updatedUser.Password)
+	require.Equal(t, newHashedPassword, updatedUser.Password)
 	require.Equal(t, oldUser.Email, updatedUser.Email)
-	require.Equal(t, oldUser.Role.String, updatedUser.Role.String)
+	require.Equal(t, oldUser.Role, updatedUser.Role)
 
 }
 
@@ -126,12 +115,12 @@ func TestUpdateUserAllFields(t *testing.T) {
 	})
 
 	require.NoError(t, err)
-	require.NotEqual(t, oldUser.Password.String, updatedUser.Password.String)
-	require.Equal(t, newHashedPassword, updatedUser.Password.String)
+	require.NotEqual(t, oldUser.Password, updatedUser.Password)
+	require.Equal(t, newHashedPassword, updatedUser.Password)
 	require.Equal(t, oldUser.Email, updatedUser.Email)
 	require.NotEqual(t, oldUser.Role, updatedUser.Role)
-	require.Equal(t, newRole, updatedUser.Role.String)
+	require.Equal(t, newRole, updatedUser.Role)
 	require.NotEqual(t, oldUser.Username, updatedUser.Username)
-	require.Equal(t, newUsername, updatedUser.Username.String)
+	require.Equal(t, newUsername, updatedUser.Username)
 
 }

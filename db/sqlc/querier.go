@@ -30,7 +30,7 @@ type Querier interface {
 	GetPosts(ctx context.Context, arg GetPostsParams) ([]Post, error)
 	GetTagId(ctx context.Context, id int32) (Tag, error)
 	GetTags(ctx context.Context) ([]Tag, error)
-	GetUserByEmail(ctx context.Context, email sql.NullString) (User, error)
+	GetUserByEmail(ctx context.Context, email string) (User, error)
 	GetUserById(ctx context.Context, id int32) (User, error)
 	GetUsers(ctx context.Context) ([]User, error)
 	ListPostWithCommentAndTags(ctx context.Context) ([]ListPostWithCommentAndTagsRow, error)

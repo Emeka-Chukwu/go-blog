@@ -331,7 +331,7 @@ func (mr *MockStoreMockRecorder) GetTags(arg0 interface{}) *gomock.Call {
 }
 
 // GetUserByEmail mocks base method.
-func (m *MockStore) GetUserByEmail(arg0 context.Context, arg1 sql.NullString) (db.User, error) {
+func (m *MockStore) GetUserByEmail(arg0 context.Context, arg1 string) (db.User, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetUserByEmail", arg0, arg1)
 	ret0, _ := ret[0].(db.User)
