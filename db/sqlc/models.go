@@ -51,11 +51,11 @@ type Tag struct {
 }
 
 type User struct {
-	ID        int32          `json:"id"`
-	Username  sql.NullString `json:"username"`
-	Email     sql.NullString `json:"email"`
-	Password  sql.NullString `json:"password"`
-	Role      sql.NullString `json:"role"`
-	CreatedAt sql.NullTime   `json:"created_at"`
-	UpdatedAt sql.NullTime   `json:"updated_at"`
+	ID        int32     `json:"id"`
+	Username  string    `json:"username"`
+	Email     string    `json:"email"`
+	Password  string    `json:"password"`
+	Role      string    `json:"role"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }

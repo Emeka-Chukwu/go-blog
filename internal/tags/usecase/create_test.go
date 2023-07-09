@@ -3,6 +3,7 @@ package tags
 import (
 	mockdb "blog-api/db/mock"
 	db "blog-api/db/sqlc"
+	tokenpkg "blog-api/pkg/token"
 	"blog-api/util"
 	"bytes"
 	"database/sql"
@@ -11,6 +12,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang/mock/gomock"
@@ -21,9 +23,9 @@ import (
 func TestCreateTagAPI(t *testing.T) {
 	tagModel := randomTag(t)
 	testCases := []struct {
-		name string
-		body gin.H
-		// setupAuth     func(t *testing.T, request *http.Request)
+		name          string
+		body          gin.H
+		setupAuth     func(t *testing.T, request *http.Request, tokenMaker tokenpkg.Maker)
 		buildStubs    func(store *mockdb.MockStore)
 		checkResponse func(recoder *httptest.ResponseRecorder)
 	}{
@@ -33,9 +35,9 @@ func TestCreateTagAPI(t *testing.T) {
 				"name": tagModel.Name,
 				"id":   tagModel.ID,
 			},
-			// setupAuth: func(t *testing.T, request *http.Request) {
-			// 	addAuthorization(t, request, tokenMaker, authorizationTypeBearer, user.Username, time.Minute)
-			// },
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker tokenpkg.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, 9900, time.Minute, "user")
+			},
 			buildStubs: func(store *mockdb.MockStore) {
 				arg := db.CreateTagsParams{
 					Name: tagModel.Name,
@@ -73,9 +75,9 @@ func TestCreateTagAPI(t *testing.T) {
 				"name": tagModel.Name,
 				"id":   tagModel.ID,
 			},
-			// setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
-			// 	addAuthorization(t, request, tokenMaker, authorizationTypeBearer, user.Username, time.Minute)
-			// },
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker tokenpkg.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, 9900, time.Minute, "user")
+			},
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
 					CreateTags(gomock.Any(), gomock.Any()).
@@ -92,9 +94,10 @@ func TestCreateTagAPI(t *testing.T) {
 				"name": 44,
 				"id":   tagModel.ID,
 			},
-			// setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
-			// 	addAuthorization(t, request, tokenMaker, authorizationTypeBearer, user.Username, time.Minute)
-			// },
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker tokenpkg.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, 9900, time.Minute, "user")
+			},
+
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
 					CreateTags(gomock.Any(), gomock.Any()).
@@ -110,9 +113,9 @@ func TestCreateTagAPI(t *testing.T) {
 				"name": tagModel.Name,
 				"id":   tagModel.ID,
 			},
-			// setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
-			// 	addAuthorization(t, request, tokenMaker, authorizationTypeBearer, user.Username, time.Minute)
-			// },
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker tokenpkg.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, 9900, time.Minute, "user")
+			},
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
 					CreateTags(gomock.Any(), gomock.Any()).
@@ -145,7 +148,7 @@ func TestCreateTagAPI(t *testing.T) {
 			url := "/api/v1/tags/create"
 			request, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(data))
 			require.NoError(t, err)
-			// tc.setupAuth(t, request, server.tokenMaker)
+			tc.setupAuth(t, request, server.TokenMaker)
 			server.Router.ServeHTTP(recorder, request)
 			tc.checkResponse(recorder)
 		})

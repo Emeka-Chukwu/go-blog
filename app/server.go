@@ -4,6 +4,8 @@ import (
 	db "blog-api/db/sqlc"
 	categoryhandler "blog-api/internal/categories/https"
 	taghandler "blog-api/internal/tags/https"
+	userhandler "blog-api/internal/users/https"
+	"blog-api/middleware"
 	serverpkg "blog-api/pkg/server"
 	"blog-api/util"
 	"net/http"
@@ -27,6 +29,8 @@ func SetupRouter(server *serverpkg.Server) {
 	router.GET("/", func(ctx *gin.Context) {
 		ctx.JSON(http.StatusOK, gin.H{"message": "app is unning fine at" + server.Config.HTTPServerAddress})
 	})
+	userhandler.NewTagsHandlers(groupRouter, server.Store, server.Config, server.TokenMaker)
+	groupRouter.Use(middleware.AuthMiddleware(server.TokenMaker, server.Config))
 	categoryhandler.NewCategoryHandlers(groupRouter, server.Store, server.Config)
 	taghandler.NewTagsHandlers(groupRouter, server.Store, server.Config)
 	// userHandler.NewUserHandlers(groupRouter, server.store, server.taskDistributor, server.tokenMaker, server.config)

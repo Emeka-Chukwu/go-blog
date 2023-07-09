@@ -1,4 +1,4 @@
-package tags
+package users
 
 import (
 	db "blog-api/db/sqlc"
@@ -51,18 +51,15 @@ func SetupRouter(server *serverpkg.Server) error {
 	router.GET("/", func(ctx *gin.Context) {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"message": "app is unning fine at" + server.Config.HTTPServerAddress})
 	})
-	NewTagHandlers(groupRouter, server.Store, server.Config)
+	NewTagHandlers(groupRouter, server.Store, server.Config, server.TokenMaker)
 	return nil
 }
 
-func NewTagHandlers(router *gin.RouterGroup, store db.Store, config util.Config) {
-	tagHandler := NewTagUsecase(store, config)
-	route := router.Group("/tags")
-	route.POST("/create", tagHandler.Create)
-	route.GET("/:id", tagHandler.Fetch)
-	route.PUT("/:id", tagHandler.Update)
-	route.DELETE("/:id", tagHandler.Delete)
-	route.GET("/", tagHandler.List)
+func NewTagHandlers(router *gin.RouterGroup, store db.Store, config util.Config, tokenMaker tokenpkg.Maker) {
+	handler := NewUserUsecase(store, config, tokenMaker)
+	route := router.Group("/auths")
+	route.POST("/signup", handler.Signup)
+	route.POST("/login", handler.Login)
 }
 
 func addAuthorization(
