@@ -92,10 +92,17 @@ fetch by id
 
 */api/v1/category/:id*
 
-### Completed Tasks
-
 ### Tasks
-- [x] Implement api for comments
-- [x] write the test coverage for it
-- [x] complete the api documentation
+- [x] Users api implementaion
+- [x] Users test coverage for the implemented api
+- [x] Category api implementaion
+- [x] Category test coverage for the implemented api
+- [x] Tag api implementaion
+- [x] Tag test coverage for the implemented api
+- [x] Post api implementaion
+- [x] Post test coverage for the implemented api
+- [x] Test coverage for all the db calls 
+- [ ] Implement api for comments
+- [ ] write the test coverage for it
 - [ ] complete the api documentation
+
