@@ -3,6 +3,7 @@ package app
 import (
 	db "blog-api/db/sqlc"
 	categoryhandler "blog-api/internal/categories/https"
+	posthandler "blog-api/internal/posts/https"
 	taghandler "blog-api/internal/tags/https"
 	userhandler "blog-api/internal/users/https"
 	"blog-api/middleware"
@@ -33,6 +34,7 @@ func SetupRouter(server *serverpkg.Server) {
 	groupRouter.Use(middleware.AuthMiddleware(server.TokenMaker, server.Config))
 	categoryhandler.NewCategoryHandlers(groupRouter, server.Store, server.Config)
 	taghandler.NewTagsHandlers(groupRouter, server.Store, server.Config)
+	posthandler.NewPostsHandlers(groupRouter, server.Store, server.Config, server.TokenMaker)
 	// userHandler.NewUserHandlers(groupRouter, server.store, server.taskDistributor, server.tokenMaker, server.config)
 
 }
