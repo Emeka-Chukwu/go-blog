@@ -3,14 +3,14 @@
 
 ## How to run this project
 
-## System Requirements
+### System Requirements
 
 - Golang
 - Docker
 - Postgres (included in docker)
 - Migrations
 
-## Running
+### Running
 
 Setting up all containers
 
@@ -18,8 +18,16 @@ Setting up all containers
 $ make postgress
 ```
 
+### Create and drop DB
 
-## Migration
+Setting up all containers
+
+```console
+$ make createdb
+
+$ make dropdb
+```
+### Migration
 
 Migrating sql file into db
 
@@ -34,7 +42,7 @@ $ make migrationdown
 ```
 Note: Run migration when docker is running
 
-## Run Test
+### Run Test
 
 Run all the test in the project with
 
