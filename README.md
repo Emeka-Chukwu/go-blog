@@ -91,3 +91,7 @@ create
 fetch by id
 
 */api/v1/category/:id*
+
+- [x] Implement api for comments
+- [x] write the test coverage for it
+- [x] complete the api documentation
