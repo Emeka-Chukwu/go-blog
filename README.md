@@ -8,6 +8,9 @@
 - Golang
 - Docker
 - Postgres (included in docker)
+- Sqlc
+- Gin
+- Paseto (for authentication)
 - Migrations
 
 ### Running
